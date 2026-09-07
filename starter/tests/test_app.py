@@ -51,7 +51,16 @@ def test_check_solution_script_displays_completion_message(client):
     script = response.text
     assert "const msg = document.getElementById('message');" in script
     assert 'if (incorrect.size === 0)' in script
-    assert "msg.innerText = 'Congratulations! You solved it!'" in script
+    assert 'Congratulations! You solved it in ${elapsedSeconds} seconds with ${hintsUsed} hints.' in script
+
+
+def test_score_prompt_can_be_cancelled_and_retried(client):
+    response = client.get('/static/main.js')
+
+    assert response.status_code == 200
+    script = response.text
+    assert 'if (!name) return;' in script
+    assert script.index('if (!name) return;') < script.index('gameCompleted = true;')
 
 
 def test_score_script_tracks_and_persists_top_ten_scores(client):
@@ -66,6 +75,33 @@ def test_score_script_tracks_and_persists_top_ten_scores(client):
     assert 'difficulty' in script
     assert 'hintsUsed' in script
     assert 'saveScore();' in script
+
+
+def test_hint_cells_have_distinct_theme_aware_styling(client):
+    script_response = client.get('/static/main.js')
+    styles_response = client.get('/static/styles.css')
+
+    assert script_response.status_code == 200
+    assert styles_response.status_code == 200
+    assert "input.className = 'sudoku-cell prefilled hint-cell';" in script_response.text
+    assert '--hint-background:' in styles_response.text
+    assert '.sudoku-cell.hint-cell {' in styles_response.text
+    assert 'background: var(--hint-background);' in styles_response.text
+
+
+def test_game_actions_handle_failed_fetch_and_unexpected_responses(client):
+    response = client.get('/static/main.js')
+
+    assert response.status_code == 200
+    script = response.text
+    assert 'function showRequestError(error)' in script
+    assert 'async function fetchJson(url, options)' in script
+    assert "Unable to connect to the server." in script
+    assert "Unexpected response from the server." in script
+    assert 'async function newGame()' in script
+    assert 'async function checkSolution()' in script
+    assert 'async function getHint()' in script
+    assert script.count('showRequestError(error);') == 3
 
 
 def test_new_game_returns_requested_puzzle(client):
@@ -111,8 +147,19 @@ def test_input_script_validates_invalid_sudoku_entries_immediately(client):
     script = response.text
     assert 'function hasConflict(input, value)' in script
     assert 'function validateInput(input)' in script
-    assert 'validateInput(e.target);' in script
-    assert "input.className = 'sudoku-cell incorrect';" in script
+    assert 'validateInput(event.target);' in script
+    assert "cell.classList.add('incorrect');" in script
+
+
+def test_input_script_uses_event_delegation_on_sudoku_board(client):
+    response = client.get('/static/main.js')
+
+    assert response.status_code == 200
+    script = response.text
+    assert 'function handleCellInput(event)' in script
+    assert "event.target.matches('.sudoku-cell')" in script
+    assert "document.getElementById('sudoku-board').addEventListener('input', handleCellInput);" in script
+    assert 'input.addEventListener(\'input\'' not in script
 
 
 def test_theme_toggle_script_wires_dark_mode_class(client):

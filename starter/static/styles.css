@@ -7,6 +7,7 @@
     --section-b-background: #eef5fb;
     --cell-border: #bbb;
     --prefilled-background: #e0e0e0;
+    --hint-background: #fff3cd;
     --button-background: #1976d2;
     --button-hover: #1565c0;
     --button-text: #fff;
@@ -30,6 +31,7 @@ body.dark-mode {
     --section-b-background: #454a50;
     --cell-border: #70757a;
     --prefilled-background: #5f6368;
+    --hint-background: #806b2a;
     --button-background: #8ab4f8;
     --button-hover: #aecbfa;
     --button-text: #202124;
@@ -152,8 +154,12 @@ h1 {
     color: var(--text-color);
 }
 
+.sudoku-cell.hint-cell {
+    background: var(--hint-background);
+}
+
 .sudoku-cell.incorrect {
-    background: var(--incorrect-background);
+    background: var(--incorrect-background) !important;
 }
 
 .sudoku-cell:nth-child(3),
