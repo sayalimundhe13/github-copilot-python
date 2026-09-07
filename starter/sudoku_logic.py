@@ -39,19 +39,40 @@ def fill_board(board):
                 return False
     return True
 
+def count_solutions(board, limit=2):
+    for row in range(SIZE):
+        for col in range(SIZE):
+            if board[row][col] == EMPTY:
+                solutions = 0
+                for candidate in range(1, SIZE + 1):
+                    if is_safe(board, row, col, candidate):
+                        board[row][col] = candidate
+                        solutions += count_solutions(board, limit - solutions)
+                        board[row][col] = EMPTY
+                        if solutions >= limit:
+                            return solutions
+                return solutions
+    return 1
+
 def remove_cells(board, clues):
-    attempts = SIZE * SIZE - clues
-    while attempts > 0:
-        row = random.randrange(SIZE)
-        col = random.randrange(SIZE)
-        if board[row][col] != EMPTY:
-            board[row][col] = EMPTY
-            attempts -= 1
+    cells = [(row, col) for row in range(SIZE) for col in range(SIZE)]
+    random.shuffle(cells)
+    removed = 0
+    for row, col in cells:
+        if removed == SIZE * SIZE - clues:
+            break
+        value = board[row][col]
+        board[row][col] = EMPTY
+        if count_solutions(board) == 1:
+            removed += 1
+        else:
+            board[row][col] = value
 
 def generate_puzzle(clues=35):
-    board = create_empty_board()
-    fill_board(board)
-    solution = deep_copy(board)
-    remove_cells(board, clues)
-    puzzle = deep_copy(board)
-    return puzzle, solution
+    while True:
+        board = create_empty_board()
+        fill_board(board)
+        solution = deep_copy(board)
+        remove_cells(board, clues)
+        if sum(cell != EMPTY for row in board for cell in row) == clues:
+            return deep_copy(board), solution
